@@ -1,18 +1,25 @@
 # Rule sources: primary-source claim check
 
-This file records the primary sources behind the explanatory text of the audit rules. Each section quotes an earlier draft of a rule's text, gives a verdict against the sources, and suggests the wording the audit now uses in substance.
+This file records the primary sources behind the explanatory text of the audit rules. Each section quotes an earlier draft of a rule's text. It then gives a verdict against the sources and suggests new wording. The audit now uses that wording in substance.
 
-All quotes are verbatim from the pages as fetched when the rules were written. Pages change, so check the live page before you rely on a quote. Apple developer pages were read in their JSON form (`https://developer.apple.com/tutorials/data/documentation/<path>.json`). The URLs below are the human-readable forms. Jamf pages were read from the Jamf Pro Documentation 11.32.0 map on learn.jamf.com (the "current" docs).
+All quotes are verbatim. They show each page as it read when the rules were written. Pages change, so check the live page before you rely on a quote.
 
-Verdict key: SUPPORTED = the primary source says it. PARTLY = part of the claim is right and the section names the part that is wrong or unsupported. CONTRADICTED = the primary source says the opposite. NOT FOUND = no primary source found.
+The Apple developer pages came from their JSON form (`https://developer.apple.com/tutorials/data/documentation/<path>.json`). The URLs below are the human-readable forms. The Jamf pages came from the Jamf Pro Documentation 11.32.0 map on learn.jamf.com (the "current" docs).
+
+Verdict key:
+
+- **SUPPORTED:** the primary source says it.
+- **PARTLY:** part of the claim is right. The section names the part that is wrong or unsupported.
+- **CONTRADICTED:** the primary source says the opposite.
+- **NOT FOUND:** the search found no primary source.
 
 ---
 
 ## 1. ACC-07: Automatic login
 
-**Current text:** "Automatic login: The Mac logs a user in at boot without a password, which defeats FileVault pre-boot auth after unlock."
+**Earlier draft:** "Automatic login: The Mac logs a user in at boot without a password, which defeats FileVault pre-boot auth after unlock."
 
-**Verdict: CONTRADICTED.** macOS does not allow automatic login while FileVault is on, so automatic login cannot "defeat FileVault pre-boot auth". If automatic login is on, FileVault is off. The real risk is that anyone who restarts the Mac reaches the desktop. A different setting, `DisableFDEAutoLogin`, controls whether unlocking FileVault at boot also logs the user in. That setting is not the "Automatic login" setting.
+**Verdict: CONTRADICTED.** macOS does not allow automatic login while FileVault is on, so automatic login cannot "defeat FileVault pre-boot auth". If automatic login is on, FileVault is off. The real risk is that anyone who restarts the Mac reaches the desktop. A different setting, `DisableFDEAutoLogin`, controls whether the FileVault unlock at boot also completes the user's login. That setting is not the "Automatic login" setting.
 
 Quotes:
 
@@ -33,9 +40,9 @@ Source: https://developer.apple.com/documentation/devicemanagement/loginwindow (
 
 ## 2. OS-03: Which macOS versions Apple patches
 
-**Current text:** "Apple patches only the current macOS and the two before it."
+**Earlier draft:** "Apple patches only the current macOS and the two before it."
 
-**Verdict: PARTLY.** Apple does not publish an "N-2" support policy. Apple's only published statement says that previous versions do not get all known security fixes. That statement is stronger than the claim: even the two previous versions are only partly patched. "Current plus two before it" describes what Apple's release list shows in practice, not a stated policy.
+**Verdict: PARTLY.** Apple does not publish an "N-2" support policy. Apple's only published statement says that previous versions do not get all known security fixes. That statement is stronger than the claim: even the two previous versions get only some of the fixes. "Current plus two before it" describes what Apple's release list shows in practice, not a stated policy.
 
 Quotes:
 
@@ -44,15 +51,19 @@ Source: https://support.apple.com/guide/deployment/depc4c80847a/web (Apple Platf
 
 Source: https://support.apple.com/en-us/100100 (Apple security releases). This shows the practice, not a policy. On 14 Sep 2026 Apple released "macOS Golden Gate 27", "macOS Tahoe 26.7", and "macOS Sequoia 15.8". On 28 Sep 2026 it released "macOS Tahoe 26.7.1" and "macOS Sequoia 15.8.1". The most recent Sonoma entry is "macOS Sonoma 14.8.9", dated 06 Aug 2026.
 
-**Suggested wording:** "Apple states that versions before the current macOS do not receive all known security fixes. In practice, Apple has shipped security updates only for the current release and the two before it. Older releases get no fixes at all."
+**Suggested wording:** "Apple states that versions before the current macOS do not receive all known security fixes. In practice, Apple shipped security updates only for the current release and the two before it. Older releases get no fixes at all."
 
 ---
 
 ## 3. FV-04: FileVault recovery key escrow
 
-**Current text:** "Jamf only receives a recovery key when an escrow payload (com.apple.security.FDERecoveryKeyEscrow) is installed. A key made without one is never stored."
+**Earlier draft:** "Jamf only receives a recovery key when an escrow payload (com.apple.security.FDERecoveryKeyEscrow) is installed. A key made without one is never stored."
 
-**Verdict: CONTRADICTED.** Jamf documents a second escrow path. When a Disk Encryption policy turns FileVault on, the Jamf binary escrows the personal recovery key (PRK) immediately, with no escrow payload. Jamf's current docs (11.32.0) still document policy-based enablement and do not mark it as deprecated. "Never stored" is also too absolute. Jamf can issue and escrow a new PRK by policy. On macOS 26 or later, installing an escrow profile while a bootstrap token is present rotates the PRK and escrows the new one. Note: one sentence on Jamf's "Preparation" page contradicts the sentences that follow it on the same page (quoted below). The other Jamf pages agree with the policy path.
+**Verdict: CONTRADICTED.** Jamf documents a second escrow path. When a Disk Encryption policy enables FileVault, the Jamf binary escrows the personal recovery key (PRK) immediately, with no escrow payload. Jamf's current docs (11.32.0) still document policy-based enablement and do not mark it as deprecated.
+
+"Never stored" is also too absolute. Jamf can issue and escrow a new PRK by policy. On macOS 26 or later, an escrow profile installed while a bootstrap token is present rotates the PRK and escrows the new one.
+
+Note: one sentence on Jamf's "Preparation" page contradicts the sentences that follow it on the same page (quoted below). The other Jamf pages agree with the policy path.
 
 Quotes:
 
@@ -76,15 +87,15 @@ Source: https://learn.jamf.com/r/en-US/jamf-pro-documentation-current/Issuing_a_
 Source: https://developer.apple.com/documentation/devicemanagement/fderecoverykeyescrow (the macOS-native path)
 > If FileVault is enabled after the system installs this payload, the system encrypts the FileVault PRK with the specified certificate, wrapped with a CMS envelope and stored at /var/db/FileVaultPRK.dat. The SecurityInfo command makes this encrypted data available to the MDM server.
 
-**Suggested wording:** "Jamf has no recovery key for this Mac. Jamf receives a key in three ways: through an escrow payload that is present when FileVault is turned on, through a Jamf Disk Encryption policy that turns FileVault on, or through a new key issued by a policy or rotated on macOS 26 or later. Issue a new key so this Mac can be recovered."
+**Suggested wording:** "Jamf has no recovery key for this Mac. Jamf receives a key in three ways. The first is an escrow payload that is present when FileVault is enabled. The second is a Jamf Disk Encryption policy that enables FileVault. The third is a new key that a policy issues or that macOS 26 or later rotates. Issue a new key so that this Mac can be recovered."
 
 ---
 
 ## 4. SEC-04: Screen saver password
 
-**Current text:** "Without askForPassword in a profile, the screen saver only blanks the display, and users can turn the lock prompt off."
+**Earlier draft:** "Without askForPassword in a profile, the screen saver only blanks the display, and users can turn the lock prompt off."
 
-**Verdict: PARTLY.** The first half is unsupported. Apple does not document the out-of-box default for "Require password after screen saver begins or display is turned off". Without a profile, the behavior is whatever the user set in Lock Screen settings, which may already require a password. The second half is supported: users can change the setting. Apple's documented `askForPassword` default of false is the payload key's default, not the macOS default.
+**Verdict: PARTLY.** No source supports the first half. Apple does not document the out-of-box default for "Require password after screen saver begins or display is turned off". Without a profile, the user's Lock Screen setting decides the behavior, and that setting may already require a password. The sources support the second half: users can change the setting. Apple's documented `askForPassword` default of false is the payload key's default, not the macOS default.
 
 Quotes:
 
@@ -93,7 +104,7 @@ Source: https://developer.apple.com/documentation/devicemanagement/screensaver
 
 > askForPasswordDelay: The number of seconds to delay before the device requires a password to unlock or stop the screen saver (the grace period). A value of 2147483647 (hexadecimal equivalent of 0x7FFFFFFF) disables this requirement, and a value of 0 immediately requires the password. To use this option, you must set askForPassword to true.
 
-(The text after each key name is quoted verbatim. Apple lists the key name as the heading.)
+(Each quote after a key name is verbatim. Apple shows the key name as the heading.)
 
 Source: https://support.apple.com/guide/mac-help/mh11784/mac
 > Require password after screen saver begins or display is turned off
@@ -105,7 +116,7 @@ Source: https://support.apple.com/en-us/102316
 
 > macOS Ventura 13 or later: Choose System Settings from the Apple menu [Apple logo], then click Lock Screen in the sidebar. Configure the "Require password after screen saver begins or display is turned off" setting as desired.
 
-macOS default value: NOT FOUND. I checked mh11784, mchlp2270, mchl4b68853d, and 102316. None of them states the default.
+macOS default value: NOT FOUND. The pages mh11784, mchlp2270, mchl4b68853d and 102316 do not state the default.
 
 **Suggested wording:** "No profile enforces a screen-saver password (askForPassword). Whether the screen locks depends on each user's Lock Screen setting, which users can change or delay."
 
@@ -113,26 +124,32 @@ macOS default value: NOT FOUND. I checked mh11784, mchlp2270, mchl4b68853d, and 
 
 ## 5. SEC-05: Default local password rules
 
-**Current text:** "Without a policy, accounts may keep 4-character passwords."
+**Earlier draft:** "Without a policy, accounts may keep 4-character passwords."
 
-**Verdict: NOT FOUND (no Apple documentation).** I found no Apple page that states the default password rules for macOS local accounts. Apple's "four-digit PIN" default applies to iPhone and iPad, not Mac:
+**Verdict: NOT FOUND (no Apple documentation).** The search found no Apple page that states the default password rules for macOS local accounts. Apple's "four-digit PIN" default applies to iPhone and iPad, not Mac:
 
 Source: https://support.apple.com/guide/deployment/depeadc2af0b/web
 > By default, the user’s passcode can be defined as a six-digit personal identification number (PIN) on Face ID and Touch ID–capable devices or a four-digit PIN on all other devices. On devices with iOS and iPadOS, you can choose from an extensive set of passcode policies to meet your security needs.
 
-Local observation (not a primary source): on a test Mac (macOS 27.0), the read-only command `pwpolicy -getaccountpolicies` shows a global content policy with identifier `com.apple.defaultpasswordpolicy.fde`, rule `policyAttributePassword matches '.{4,}+'`, and Apple's localized description "Enter a password that is four characters or more." This supports the claim, but an observation of one Mac is not Apple documentation.
+Local observation (not a primary source): on a test Mac with macOS 27.0, the read-only command `pwpolicy -getaccountpolicies` shows one global content policy. The policy has these values:
+
+- Identifier: `com.apple.defaultpasswordpolicy.fde`
+- Rule: `policyAttributePassword matches '.{4,}+'`
+- Apple's localized description: "Enter a password that is four characters or more."
+
+This observation supports the claim. But an observation of one Mac is not Apple documentation.
 
 Related fact for remediation: Apple marks the Passcode payload (`com.apple.mobiledevice.passwordpolicy`) as deprecated in macOS 27 (`deprecatedAt: 27.0`, https://developer.apple.com/documentation/devicemanagement/passcode). Apple's replacement is the declarative Passcode configuration (https://support.apple.com/guide/deployment/depf72b010a8/web).
 
-**Suggested wording:** "No password policy is deployed, so only macOS's built-in local rule applies. On a macOS 27 test Mac, that rule (`com.apple.defaultpasswordpolicy.fde`) requires only 4 characters."
+**Suggested wording:** "This Mac has no deployed password policy, so only the built-in macOS local rule applies. On a macOS 27 test Mac, that rule (`com.apple.defaultpasswordpolicy.fde`) requires only 4 characters."
 
 ---
 
 ## 6. NET-01: Firewall and sharing services
 
-**Current text:** "With SSH and Screen Sharing on, the firewall is the only local filter on the organisation's network and public Wi-Fi."
+**Earlier draft:** "With SSH and Screen Sharing on, the firewall is the only local filter on the organisation's network and public Wi-Fi."
 
-**Verdict: CONTRADICTED.** The macOS application firewall does not filter services that are turned on in Sharing settings. Apple says those services connect through the firewall. The firewall blocks them only when "Block all incoming connections" is on. With Remote Login and Screen Sharing on, nothing in the firewall restricts who can reach them.
+**Verdict: CONTRADICTED.** The macOS application firewall does not filter the services that a user enables in Sharing settings. Apple says those services connect through the firewall. The firewall blocks them only when "Block all incoming connections" is on. With Remote Login and Screen Sharing on, nothing in the firewall restricts who can reach them.
 
 Quotes:
 
@@ -153,15 +170,17 @@ Source: https://support.apple.com/guide/mac-help/mh11783/mac
 Source: https://developer.apple.com/documentation/devicemanagement/firewall (key `AllowSigned`, default true)
 > If true, the system allows built-in software to receive incoming connections.
 
-**Suggested wording:** "Remote Login (SSH) and Screen Sharing are on. macOS's firewall lets services turned on in Sharing settings through, so they can be reached from any network the Mac joins, including the organisation's network and public Wi-Fi. Turn them off or limit 'Allow access for' to named admins."
+**Suggested wording:** "Remote Login (SSH) and Screen Sharing are on. The macOS firewall does not block services that Sharing settings enable. Any network that the Mac joins can reach them, including the organisation's network and public Wi-Fi. Disable them, or limit 'Allow access for' to named admins."
 
 ---
 
 ## 7. DIR-01: Active Directory binding and mobile accounts
 
-**Current text:** "AD binding keeps mobile accounts and machine passwords on the Mac and breaks logins away from the organisation's network."
+**Earlier draft:** "AD binding keeps mobile accounts and machine passwords on the Mac and breaks logins away from the organisation's network."
 
-**Verdict: PARTLY.** Apple supports the first half. A bound Mac keeps a computer-account password in the System keychain, and mobile accounts cache the user's password. Apple contradicts "breaks logins away from the organisation's network" for mobile accounts, which are designed to log in while disconnected. The real off-network problems are different. Password changes made off-network get out of sync with the directory and the login keychain. Accounts that are not mobile accounts (Apple's payload default for `ADCreateMobileAccountAtLogin` is false) have no cached credentials.
+**Verdict: PARTLY.** Apple supports the first half. A bound Mac keeps a computer-account password in the System keychain, and mobile accounts cache the user's password. Apple contradicts "breaks logins away from the organisation's network" for mobile accounts. Apple designs mobile accounts for login while the Mac is disconnected.
+
+The real off-network problems are different. Password changes made off the network no longer match the directory and the login keychain. Accounts that are not mobile accounts (Apple's payload default for `ADCreateMobileAccountAtLogin` is false) have no cached credentials.
 
 Quotes:
 
@@ -176,13 +195,13 @@ Source: https://support.apple.com/guide/directory-utility/diru11f4f748/mac
 Source: https://developer.apple.com/documentation/devicemanagement/directoryservice (key `ADCreateMobileAccountAtLogin`, default false)
 > If true, the system creates a mobile account at login.
 
-**Suggested wording:** "This Mac is bound to AD. It keeps a computer-account password in the System keychain and caches mobile-account passwords. Mobile accounts can still log in away from the organisation's network, but password changes made off-network get out of sync with AD and the login keychain, and accounts that are not mobile accounts cannot log in off-network."
+**Suggested wording:** "This Mac is bound to AD. It keeps a computer-account password in the System keychain and caches mobile-account passwords. Mobile accounts still allow login away from the organisation's network. But password changes made off the network no longer match AD and the login keychain. Accounts that are not mobile accounts allow no login off the network."
 
 ---
 
 ## 8. OS-01: Fixes for exploited CVEs
 
-**Current text:** "Apple shipped fixes for CVEs it reports as exploited in the wild."
+**Earlier draft:** "Apple shipped fixes for CVEs it reports as exploited in the wild."
 
 **Verdict: PARTLY.** Apple does not say "exploited in the wild." Apple says it "is aware of a report that this issue may have been exploited". The report often concerns a different platform. In the current macOS example below, the report is about iOS before iOS 27, not macOS.
 
@@ -198,15 +217,21 @@ Earlier example, macOS Tahoe 26.3:
 Source: https://support.apple.com/en-us/126348
 > Impact: An attacker with memory write capability may be able to execute arbitrary code. Apple is aware of a report that this issue may have been exploited in an extremely sophisticated attack against specific targeted individuals on versions of iOS before iOS 26. CVE-2025-14174 and CVE-2025-43529 were also issued in response to this report.
 
-**Suggested wording:** "This Mac is missing fixes for CVEs that Apple says it 'is aware of a report' may have been exploited, in targeted attacks (Apple's wording; the report may concern iOS)."
+**Suggested wording:** "This Mac is missing fixes for CVEs that Apple says it 'is aware of a report' may have been exploited in targeted attacks. The wording is Apple's. The report may concern iOS."
 
 ---
 
 ## 9. PRF-01: Conflicting values across profiles
 
-**Current text:** "Apple documents that conflicting values for one key across profiles give unexpected behavior; whichever installs last may win."
+**Earlier draft:** "Apple documents that conflicting values for one key across profiles give unexpected behavior; whichever installs last may win."
 
-**Verdict: PARTLY.** Apple documents "unexpected behavior" only for the Restrictions payload (managing the same restriction in different payloads). Apple's current general guidance says the result depends on the configuration. Several payloads have defined merge rules: Firewall uses the most restrictive union, PPPC uses the more restrictive settings, and System Extensions combine. I found no Apple statement that "whichever installs last wins". An older Apple sentence ("the resulting behavior is undefined") is no longer on the current page dep9a318a393.
+**Verdict: PARTLY.** Apple documents "unexpected behavior" only for the Restrictions payload (managing the same restriction in different payloads). Apple's current general guidance says the result depends on the configuration. Several payloads follow documented merge rules:
+
+- Firewall uses the most restrictive union.
+- PPPC uses the more restrictive settings.
+- System Extensions combine.
+
+The search found no Apple statement that "whichever installs last wins". An older Apple sentence ("the resulting behavior is undefined") no longer appears on the current page dep9a318a393.
 
 Quotes:
 
@@ -228,7 +253,7 @@ Source: https://support.apple.com/guide/deployment/dep38df53c2a/web (PPPC)
 
 ## 10. ACC-08: Platform SSO "Admin" authorization mode
 
-**Current text:** "With authorization mode Admin, every user who signs in with Platform SSO is added to the local admin group."
+**Earlier draft:** "With authorization mode Admin, every user who signs in with Platform SSO is added to the local admin group."
 
 **Verdict: SUPPORTED** for `UserAuthorizationMode`, which applies "each time the user authenticates". If the audit reads `NewUserAuthorizationMode` instead, "Admin" applies only to accounts created at login. Name the key that the rule checks. Separately, if Platform SSO creates the only account on the Mac, that account becomes an administrator regardless of mode.
 
@@ -243,7 +268,7 @@ Source: https://developer.apple.com/documentation/devicemanagement/extensiblesin
 
 > Admin: The system adds the account to the local administrators group.
 
-(The text after each key name is quoted verbatim. Apple lists the key name as the heading.)
+(Each quote after a key name is verbatim. Apple shows the key name as the heading.)
 
 Source: https://support.apple.com/guide/deployment/dep7bbb05313/web
 > Platform SSO offers granular rights management to provide users with the appropriate level of privileges they need on their Mac. To do so, Platform SSO can apply the following privileges to an account each time the user authenticates:
@@ -258,9 +283,11 @@ Source: https://support.apple.com/guide/deployment/dep7bbb05313/web
 
 ## 11. MDM-03: Bootstrap token
 
-**Current text:** "Without a bootstrap token, MDM cannot grant secure tokens, install some updates, or approve kernel extensions on Apple silicon."
+**Earlier draft:** "Without a bootstrap token, MDM cannot grant secure tokens, install some updates, or approve kernel extensions on Apple silicon."
 
-**Verdict: PARTLY.** The update and kernel-extension parts are supported. On Apple silicon, the bootstrap token lets MDM authorize software updates and kernel-extension enablement without a user authenticating. The secure-token part is framed wrong. macOS, not MDM, grants secure tokens, and the bootstrap token lets it do so for new accounts (mobile accounts, Platform SSO) without an admin's authentication. Without a bootstrap token, secure tokens can still be granted, but an existing secure-token admin must authenticate.
+**Verdict: PARTLY.** Apple's pages support the update and kernel-extension parts. On Apple silicon, the bootstrap token lets MDM authorize software updates and kernel-extension enablement without a user authenticating.
+
+The secure-token part names the wrong actor. macOS, not MDM, grants secure tokens. The bootstrap token lets macOS grant them to new accounts (mobile accounts, Platform SSO) without an admin's authentication. Without a bootstrap token, macOS can still grant secure tokens, but an existing secure-token admin must authenticate.
 
 Quotes:
 
@@ -283,15 +310,19 @@ Source: https://developer.apple.com/documentation/devicemanagement/securityinfor
 
 > BootstrapTokenRequiredForSoftwareUpdate: If true, the device can accept a Bootstrap Token from the MDM server instead of prompting for user authentication prior to installation.
 
-**Suggested wording:** "No bootstrap token is escrowed. New mobile and Platform SSO accounts cannot get a secure token without an admin authenticating, and on Apple silicon MDM cannot authorize software updates, Erase All Content and Settings, or kernel-extension enablement without a user authenticating."
+**Suggested wording:** "No bootstrap token is escrowed. New mobile and Platform SSO accounts cannot get a secure token unless an admin authenticates. On Apple silicon, MDM also cannot authorize software updates, Erase All Content and Settings, or kernel-extension enablement unless a user authenticates."
 
 ---
 
 ## 12. NET-07: 802.1X server trust and PEAP/MS-CHAPv2
 
-**Current text:** (a) "Without TLSTrustedServerNames or a certificate anchor, macOS asks the user whether to trust whatever certificate the network presents." (b) "With PEAP/MS-CHAPv2, captured MS-CHAPv2 traffic can be cracked to recover the password."
+**Earlier draft:** (a) "Without TLSTrustedServerNames or a certificate anchor, macOS asks the user whether to trust whatever certificate the network presents." (b) "With PEAP/MS-CHAPv2, captured MS-CHAPv2 traffic can be cracked to recover the password."
 
-**Verdict: PARTLY.** Part (a) is SUPPORTED. `TLSAllowTrustExceptions` defaults to true, and the trust dialog appears when the system does not already trust the server certificate. Part (b) cites the wrong scope. Microsoft Advisory 2743314 is about unencapsulated MS-CHAPv2 (PPTP) and names PEAP as the mitigation. The inner MS-CHAPv2 exchange in PEAP is exposed only if the client finishes TLS with a rogue server, for example after a user accepts the trust dialog from part (a). Microsoft does not state that last step in 2743314. That link is inferred from the two sources. Microsoft's Credential Guard page does put PEAP-MSCHAPv2 Wi-Fi in the same attack class as NTLMv1 and recommends certificate-based EAP.
+**Verdict: PARTLY.** Part (a) is SUPPORTED. `TLSAllowTrustExceptions` defaults to true. The trust dialog appears when the system does not already trust the server certificate.
+
+Part (b) cites the wrong scope. Microsoft Advisory 2743314 is about unencapsulated MS-CHAPv2 (PPTP) and names PEAP as the mitigation. In PEAP, a rogue server receives the inner MS-CHAPv2 exchange only if the client completes TLS with that server. For example, this happens after a user accepts the trust dialog from part (a). Microsoft does not state that last step in 2743314. This file infers that link from the two sources.
+
+Microsoft's Credential Guard page does put PEAP-MSCHAPv2 Wi-Fi in the same attack class as NTLMv1. That page recommends certificate-based EAP.
 
 Quotes:
 
@@ -302,7 +333,7 @@ Source: https://developer.apple.com/documentation/devicemanagement/wifi/eapclien
 
 > TLSAllowTrustExceptions (default true): If ‘true’, allows a dynamic trust decision by the user. The dynamic trust is the certificate dialogue that appears when the system doesn’t trust a certificate. If ‘false’, the authentication fails if the system doesn’t already trust the certificate. As of iOS 8, Apple no longer supports this key.
 
-(The text after each key name is quoted verbatim. Apple lists the key name as the heading and the default as an attribute. The "no longer supports" note applies to iOS: Apple lists the key as "Removed: iOS 8+ | iPadOS 8+" and as available on "macOS 10.7+".)
+(Each quote after a key name is verbatim. Apple shows the key name as the heading and the default as an attribute. The "no longer supports" note applies to iOS. Apple lists the key as "Removed: iOS 8+ | iPadOS 8+" and as available on "macOS 10.7+".)
 
 Source: https://learn.microsoft.com/en-us/security-updates/securityadvisories/2012/2743314 (Microsoft Security Advisory 2743314, "Unencapsulated MS-CHAP v2 Authentication Could Allow Information Disclosure", published August 20, 2012)
 > Only VPN solutions that rely on PPTP in combination with MS-CHAP v2 as the sole authentication method are vulnerable to this issue.
@@ -316,15 +347,15 @@ Source: https://learn.microsoft.com/en-us/windows/security/identity-protection/c
 
 > For WiFi and VPN connections, it's recommended to move from MSCHAPv2-based connections (such as PEAP-MSCHAPv2 and EAP-MSCHAPv2), to certificate-based authentication (such as PEAP-TLS or EAP-TLS).
 
-**Suggested wording:** "(a) The Wi-Fi profile has no TLSTrustedServerNames or certificate anchor, so when a network presents a certificate the Mac does not already trust, macOS asks the user whether to trust it. (b) If a user accepts a rogue network's certificate, that network receives the inner MS-CHAPv2 exchange, which Microsoft says can be decrypted to recover credentials (Advisory 2743314). Microsoft recommends moving to EAP-TLS."
+**Suggested wording:** "(a) The Wi-Fi profile has no TLSTrustedServerNames or certificate anchor. When a network presents a certificate that the Mac does not already trust, macOS asks the user whether to trust it. (b) If a user accepts the certificate of a rogue network, that network receives the inner MS-CHAPv2 exchange. Microsoft says that this exchange can be decrypted to recover credentials (Advisory 2743314). Microsoft recommends a move to EAP-TLS."
 
 ---
 
 ## 13. MDM-02: User-approved MDM
 
-**Current text:** "Without user-approved MDM, kernel/system-extension approvals and privacy (PPPC) payloads do not apply."
+**Earlier draft:** "Without user-approved MDM, kernel/system-extension approvals and privacy (PPPC) payloads do not apply."
 
-**Verdict: SUPPORTED.** Apple marks the PPPC, Kernel Extension Policy, and System Extensions payloads as "Requires user-approved MDM" on macOS. Side note: Apple's PPPC page in Platform Deployment also says supervision is required, but the developer reference lists supervision as "N/A". These two Apple sources disagree.
+**Verdict: SUPPORTED.** Apple marks the PPPC, Kernel Extension Policy, and System Extensions payloads as "Requires user-approved MDM" on macOS. Side note: Apple's PPPC page in Platform Deployment also requires supervision, but the developer reference lists supervision as "N/A". These two Apple sources disagree.
 
 Quotes:
 

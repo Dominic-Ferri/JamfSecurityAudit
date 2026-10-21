@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="banner-title banner-desc">
+  <title id="banner-title">JamfSecurityAudit</title>
+  <desc id="banner-desc">Read-only security audit for Jamf-managed Macs</desc>
+  <rect width="1280" height="320" fill="#000000"/>
+  <path d="M250 74 L320 99 V158 C320 199 291 228 250 244 C209 228 180 199 180 158 V99 Z" fill="#C00027"/>
+  <polyline points="217,160 241,184 285,136" fill="none" stroke="#FFFFFF" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="372" y="162" fill="#F4BD47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="84" font-weight="700">JamfSecurityAudit</text>
+  <text x="376" y="216" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="30" font-weight="400">Read-only security audit for Jamf-managed Macs</text>
+  <rect x="0" y="312" width="1280" height="8" fill="#C00027"/>
+</svg>
