@@ -26,7 +26,7 @@ JamfSecurityAudit checks one Mac for 30 common security gaps in Jamf-managed Mac
 1. Clone the repository.
 
    ```sh
-   git clone https://github.com/Dominic-Ferri/JamfSecurityAudit.git
+   git clone https://github.com/dominicferri/JamfSecurityAudit.git
    cd JamfSecurityAudit
    ```
 

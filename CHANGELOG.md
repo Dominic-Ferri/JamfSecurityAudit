@@ -6,6 +6,7 @@
 
 - The README has a new layout: a banner, an example report, a check table grouped by area with severities, and collapsible reference sections.
 - RULE_SOURCES.md uses shorter sentences and labels each claim under review as an earlier draft. Its quotes did not change.
+- The repository moved to github.com/dominicferri/JamfSecurityAudit. The clone command in the README uses the new address.
 
 ## 2.1.0 (2026-10-21)
 
