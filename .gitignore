@@ -1,0 +1,5 @@
+Archive/
+*.bak.*
+.DS_Store
+*.app/
+__pycache__/
