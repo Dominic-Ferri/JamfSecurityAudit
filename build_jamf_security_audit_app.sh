@@ -1,6 +1,7 @@
 #!/bin/bash
 # Builds JamfSecurityAudit.app (AppleScript applet + bundled audit script):
-# osacompile, copy resources, ad-hoc sign.
+# osacompile, copy resources, and sign. CODESIGN_IDENTITY defaults to ad-hoc (`-`); set it to a
+# Developer ID Application identity for a timestamped hardened-runtime build.
 # Usage: build_jamf_security_audit_app.sh [DEST_DIR]   (default: ~/Desktop)
 set -euo pipefail
 # System tools only: a PATH entry earlier in the inherited PATH cannot swap in its own install or sed.
@@ -9,6 +10,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 DEST="${1:-$HOME/Desktop}"
 APP="$DEST/JamfSecurityAudit.app"
 VERSION="$(sed -n "s/^const VERSION = '\(.*\)';/\1/p" "$SRC/jamf_host_audit.js")"
+SIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
 if [ -z "$VERSION" ]; then
     echo "no VERSION found in $SRC/jamf_host_audit.js" >&2
     exit 1
@@ -20,7 +22,7 @@ STAGE="$(mktemp -d "${TMPDIR:-/tmp}/jamfsecurityaudit-build.XXXXXX")"
 FINAL="$APP"
 APP="$STAGE/JamfSecurityAudit.app"
 
-/usr/bin/osacompile -o "$APP" "$SRC/jamf_security_audit.applescript"
+/usr/bin/osacompile -l AppleScript -o "$APP" "$SRC/jamf_security_audit.applescript"
 RES="$APP/Contents/Resources"
 install -m 755 "$SRC/run-jamfsecurityaudit.command" "$RES/run-jamfsecurityaudit.command"
 install -m 644 "$SRC/jamf_host_audit.js" "$RES/jamf_host_audit.js"
@@ -34,7 +36,11 @@ PLIST="$APP/Contents/Info.plist"
 /usr/bin/plutil -replace CFBundleVersion -string "$VERSION" "$PLIST"
 /usr/bin/plutil -replace OSAAppletShowStartupScreen -bool false "$PLIST"
 
-/usr/bin/codesign --force --deep --sign - "$APP"
+SIGN_ARGS=(--force --deep --sign "$SIGN_IDENTITY")
+if [ "$SIGN_IDENTITY" != "-" ]; then
+    SIGN_ARGS+=(--options runtime --timestamp)
+fi
+/usr/bin/codesign "${SIGN_ARGS[@]}" "$APP"
 /usr/bin/codesign --verify --deep --strict "$APP"
 
 if [ -e "$FINAL" ]; then
@@ -45,4 +51,4 @@ fi
 /usr/bin/ditto "$APP" "$FINAL"
 # On the Desktop the file provider may add FinderInfo again, so --strict can fail there; the signature must not.
 /usr/bin/codesign --verify --deep "$FINAL"
-echo "built $FINAL ($VERSION); staged copy left in $STAGE"
+echo "built $FINAL ($VERSION; signature: $SIGN_IDENTITY); staged copy left in $STAGE"

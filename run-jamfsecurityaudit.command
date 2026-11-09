@@ -7,6 +7,7 @@
 umask 077
 clear
 DIR="$(cd "$(dirname "$0")" && pwd)"
+APP="$DIR/../.."
 # Reports name the Mac and its accounts: keep them private and out of iCloud-synced Desktop/Documents.
 REPORTS="$HOME/Library/Logs/JamfSecurityAudit"
 mkdir -p "$REPORTS" && chmod 700 "$REPORTS"
@@ -17,21 +18,36 @@ RUN=(/usr/bin/osascript -l JavaScript "$DIR/jamf_host_audit.js" --assets "$DIR/r
 echo 'JamfSecurityAudit: read-only security check of this Mac'
 LOG="$REPORTS/last-run.txt"
 ROOTDIR=""
-# Root runs only the signed bundle's own scripts, so an edited copy never gets the admin password.
-if /usr/bin/codesign --verify --deep "$DIR/../.." 2>/dev/null; then
+# A strict signature catches changed bundle resources. Developer ID builds must also pass Gatekeeper assessment;
+# an ad-hoc local build has integrity only and does not authenticate its publisher.
+TEAM_ID=""
+if /usr/bin/codesign --verify --deep --strict "$APP" 2>/dev/null; then
+    TEAM_ID="$(/usr/bin/codesign -d --verbose=2 "$APP" 2>&1 | /usr/bin/sed -n 's/^TeamIdentifier=//p')"
+fi
+if [ "$TEAM_ID" = "not set" ]; then
+    echo 'Local ad-hoc build: signature integrity verified; publisher identity is not authenticated.'
+    SIGNATURE_OK=1
+elif [ -n "$TEAM_ID" ] && /usr/sbin/spctl --assess --type execute "$APP" 2>/dev/null; then
+    SIGNATURE_OK=1
+else
+    SIGNATURE_OK=""
+fi
+if [ -n "$SIGNATURE_OK" ]; then
     echo 'Enter your admin password for full coverage, or press Ctrl-C for reduced coverage.'
     # Ctrl-C at the password prompt ends sudo only, so the reduced-coverage run below still happens.
     trap ':' INT
     /usr/bin/sudo -v && ROOTDIR="$(/usr/bin/sudo /usr/bin/mktemp -d /private/tmp/JamfSecurityAudit.XXXXXXXX)"
     trap - INT
 else
-    echo 'The app signature does not verify, so the audit will not ask for the admin password.'
+    echo 'The app signature or Gatekeeper assessment does not verify, so the audit will not ask for the admin password.'
 fi
 echo
 if [ -n "$ROOTDIR" ]; then
     # Root writes only inside its own mode-700 folder. The user shell copies the report out into a file it owns.
     /usr/bin/sudo "${RUN[@]}" --html "$ROOTDIR/report.html" | tee "$LOG"
     if /usr/bin/sudo /bin/test -f "$ROOTDIR/report.html"; then
+        # The user-owned redirect is the security boundary described above.
+        # shellcheck disable=SC2024
         /usr/bin/sudo /bin/cat "$ROOTDIR/report.html" > "$OUT"
     fi
     /usr/bin/sudo /bin/rm -f "$ROOTDIR/report.html"
@@ -42,7 +58,7 @@ else
 fi
 /usr/bin/sudo -k
 INCOMPLETE=""
-grep -q '^INCOMPLETE AUDIT' "$LOG" 2>/dev/null && INCOMPLETE=1
+/usr/bin/grep -q '^INCOMPLETE AUDIT' "$LOG" 2>/dev/null && INCOMPLETE=1
 
 echo
 if [ -f "$OUT" ]; then

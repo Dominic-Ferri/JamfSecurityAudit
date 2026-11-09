@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased
+## 2.1.1 (2026-11-08)
+
+This release makes missing evidence explicit and closes the remaining report-redaction and screen-lock validation gaps.
+
+### Correctness
+
+- Command failures for FileVault status, bootstrap-token status, automatic login, Active Directory binding, SIP and Gatekeeper no longer become findings or passes.
+- SKIP now distinguishes a check that does not apply from missing evidence. Missing evidence marks the report incomplete, including partial checks that still found a problem.
+- SEC-04 requires a present, finite `askForPasswordDelay` from 0 through 300 seconds before it counts a screen-saver profile as enforcement.
+- The AppleScript launcher builds on macOS 27.2 even when `osacompile` does not load Standard Additions terminology.
+
+### Security
+
+- Profile-conflict evidence reports value types instead of copying arbitrary primitive profile values.
+- Developer ID builds can set `CODESIGN_IDENTITY` for hardened-runtime, timestamped signing. The launcher requires Developer ID builds to pass Gatekeeper assessment before it requests administrator access and labels ad-hoc verification as integrity-only.
 
 ### Documentation
 

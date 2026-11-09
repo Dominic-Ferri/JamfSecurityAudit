@@ -224,16 +224,40 @@ class HostAuditTests(unittest.TestCase):
         self.assertIn('INCOMPLETE AUDIT', out)
 
     def test_no_sofa_feed_skips_os_checks(self):
-        r, _, _, _ = self.audit(bad(), '--offline')
+        r, data, _, _ = self.audit(bad(), '--offline')
         for rid in ('OS-01', 'OS-02', 'OS-03'):
             self.assertEqual(r[rid]['status'], 'SKIP', rid)
+            self.assertTrue(r[rid]['incomplete'], rid)
+        self.assertIn('OS-01', ' '.join(data['incomplete']))
 
-    def test_unknown_commands_never_pass_silently(self):
-        r, _, _, _ = self.audit({"commands": {"/usr/bin/id -u": ok("0")}})
+    def test_unknown_commands_only_skip_and_mark_audit_incomplete(self):
+        r, data, _, _ = self.audit({"commands": {"/usr/bin/id -u": ok("0")}})
         self.assertFalse([k for k, v in r.items() if v['status'] == 'ERROR'], 'a check crashed on empty input')
-        # With no evidence at all, a check may pass only where an empty answer really means "off".
-        self.assertLessEqual({k for k, v in r.items() if v['status'] == 'PASS'},
-                             {'NET-02', 'NET-03', 'NET-04', 'ACC-06', 'ACC-07', 'DIR-01', 'ACC-02', 'SEC-05', 'SEC-01', 'MDM-02'})
+        self.assertEqual({k: v['status'] for k, v in r.items() if v['status'] in ('PASS', 'FAIL')}, {})
+        self.assertTrue(data['incomplete'])
+
+    def test_failed_collectors_skip_and_mark_audit_incomplete(self):
+        f = good()
+        for command in ('/usr/bin/fdesetup status', '/usr/bin/profiles status -type bootstraptoken',
+                        '/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser',
+                        '/usr/sbin/dsconfigad -show', '/usr/bin/csrutil status'):
+            f['commands'][command] = ok('command failed', 70)
+        r, data, _, _ = self.audit(f)
+        for rid in ('FV-01', 'MDM-03', 'ACC-07', 'DIR-01', 'DIR-02', 'SEC-01'):
+            self.assertEqual(r[rid]['status'], 'SKIP', rid)
+            self.assertTrue(r[rid]['incomplete'], rid)
+        summary = ' '.join(data['incomplete'])
+        for rid in ('FV-01', 'MDM-03', 'ACC-07', 'DIR-01', 'SEC-01'):
+            self.assertIn(rid, summary)
+
+    def test_partial_security_evidence_keeps_finding_and_marks_incomplete(self):
+        f = bad()
+        f['commands']['/usr/sbin/spctl --status'] = ok('command failed', 70)
+        r, data, _, _ = self.audit(f)
+        self.assertEqual(r['SEC-01']['status'], 'FAIL')
+        self.assertEqual([i['name'] for i in r['SEC-01']['items']], ['System Integrity Protection'])
+        self.assertTrue(r['SEC-01']['incomplete'])
+        self.assertIn('SEC-01', ' '.join(data['incomplete']))
 
     def test_report_is_private_and_keeps_secrets_out(self):
         _, _, html, _ = self.audit(bad())
@@ -271,9 +295,11 @@ class HostAuditTests(unittest.TestCase):
     def test_failed_profiles_listing_skips_profile_checks(self):
         f = good()
         f['commands'][PROFILES] = ok('profiles: error', 1)
-        r, _, _, _ = self.audit(f)
+        r, data, _, _ = self.audit(f)
         for rid in ('ACC-06', 'FV-04', 'SEC-04', 'PRF-01'):
             self.assertEqual(r[rid]['status'], 'SKIP', rid)
+            self.assertTrue(r[rid]['incomplete'], rid)
+        self.assertIn('PRF-01', ' '.join(data['incomplete']))
         self.assertEqual(r['FV-01']['status'], 'PASS')          # FileVault on: fdesetup decides
         f['commands']['/usr/bin/fdesetup status'] = ok('FileVault is Off.')
         r, _, _, _ = self.audit(f)
@@ -323,6 +349,27 @@ class HostAuditTests(unittest.TestCase):
         r, _, _, _ = self.audit(f)
         self.assertEqual(r['SEC-04']['status'], 'FAIL')
         self.assertIn('over 300 seconds', r['SEC-04']['items'][0]['detail'])
+
+    def test_missing_screen_saver_grace_period_is_not_enforcement(self):
+        f = good()
+        saver = [profile('Saver', ('com.apple.screensaver', {'askForPassword': True}))]
+        f['commands'][PROFILES] = ok(profiles_xml(GOOD_PROFILES[:5] + saver))
+        r, _, _, _ = self.audit(f)
+        self.assertEqual(r['SEC-04']['status'], 'FAIL')
+        self.assertIn('missing or invalid', r['SEC-04']['items'][0]['detail'])
+
+    def test_unexpected_profile_string_is_not_copied_to_reports(self):
+        sentinel = 'UNEXPECTED_PRIVATE_VALUE_FOR_TEST'
+        f = good()
+        profiles = GOOD_PROFILES.copy()
+        profiles[1] = profile('Login', ('com.apple.loginwindow', {
+            'SHOWFULLNAME': True, 'DisableGuestAccount': True, 'SupportNote': 'first'}))
+        profiles.append(profile('Login2', ('com.apple.loginwindow', {'SupportNote': sentinel})))
+        f['commands'][PROFILES] = ok(profiles_xml(profiles))
+        r, data, html, _ = self.audit(f)
+        self.assertEqual(r['PRF-01']['status'], 'FAIL')
+        self.assertNotIn(sentinel, html)
+        self.assertNotIn(sentinel, json.dumps(data))
 
     def test_fixture_refused_without_env_var(self):
         env = {k: v for k, v in os.environ.items() if k != 'JAMF_HOST_AUDIT_FIXTURE'}

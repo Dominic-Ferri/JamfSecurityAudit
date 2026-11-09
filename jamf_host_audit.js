@@ -6,12 +6,12 @@
 // dscl, launchctl, ...) and fetches the public SOFA macOS feed. Run as root (sudo) for full coverage:
 // computer-level profiles, the bootstrap token and the FileVault recovery key are readable only by root.
 // Sources for each rule's wording are quoted in RULE_SOURCES.md.
-// Secret rule: reports carry names, states and counts only. Payload values under secret-like keys are masked.
+// Secret rule: reports carry names, states and counts only. Profile-conflict values are reduced to their types.
 
 ObjC.import('Foundation');
 ObjC.import('stdio');
 
-const VERSION = '2.1.0';
+const VERSION = '2.1.1';
 const SEVERITIES = ['Critical', 'High', 'Medium', 'Low'];
 const SOFA_URL = 'https://sofafeed.macadmins.io/v1/macos_data_feed.json';
 const SECRET_KEY = /password|passwd|passphrase|secret|token|credential|private_?key|\bpsk\b|api_?key/i;
@@ -60,6 +60,7 @@ const app = Application.currentApplication();
 app.includeStandardAdditions = true;
 
 class MissingData extends Error {}
+class NotApplicable extends Error {}
 
 function shq(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
 
@@ -81,10 +82,21 @@ function sh(cmd, {limit = 0, stderr = true} = {}) {
   }
 }
 // A command that failed or timed out is missing evidence, never a pass.
+function failure(cmd, r) {
+  return `${cmd.split(' ').slice(0, 2).join(' ')} ${r.rc === TIMED_OUT ? 'timed out' : `failed (exit ${r.rc})`}`;
+}
 function must(cmd, opts) {
   const r = sh(cmd, opts);
-  if (r.rc !== 0) throw new MissingData(`${cmd.split(' ').slice(0, 2).join(' ')} ${r.rc === TIMED_OUT ? 'timed out' : `failed (exit ${r.rc})`}`);
+  if (r.rc !== 0) throw new MissingData(failure(cmd, r));
   return r.out;
+}
+
+// `defaults read` uses exit 1 when a key is absent. Other failures are missing evidence.
+function readDefault(cmd) {
+  const r = sh(cmd);
+  if (r.rc === 0) return r.out.trim();
+  if (r.rc === 1 && /domain\/default pair[\s\S]*does not exist/i.test(r.out)) return null;
+  throw new MissingData(failure(cmd, r));
 }
 
 function plist(text) {
@@ -125,8 +137,9 @@ function verCmp(a, b) { for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return a[
 
 function safeValue(key, value) {
   if (SECRET_KEY.test(key)) return '<set>';
-  if (typeof value === 'boolean' || typeof value === 'number') return String(value);
-  if (typeof value === 'string' && value.length <= 60) return value;
+  if (typeof value === 'boolean') return '<boolean>';
+  if (typeof value === 'number') return '<number>';
+  if (typeof value === 'string') return '<string>';
   return `<${Array.isArray(value) ? 'array' : typeof value}>`;
 }
 
@@ -145,7 +158,7 @@ const consoleUser = () => once('console', () => {
   const u = sh('/usr/bin/stat -f%Su /dev/console').out;
   return ['root', 'loginwindow', '_mbsetupuser', ''].includes(u) ? '' : u;
 });
-const fvStatus = () => once('fv', () => sh('/usr/bin/fdesetup status').out);
+const fvStatus = () => once('fv', () => must('/usr/bin/fdesetup status'));
 const fvOn = () => /FileVault is On/.test(fvStatus()) && !/Decryption in progress/.test(fvStatus());
 // rc is non-zero when profiles failed or timed out; then nothing below it is evidence.
 const enrollment = () => once('enroll', () => {
@@ -183,6 +196,7 @@ const users = () => once('users', () => {
     .filter(Boolean);
   return {names: names.filter(n => !n.startsWith('_')), uids, listed};
 });
+const adStatus = () => once('ad', () => must('/usr/sbin/dsconfigad -show'));
 // Effective admin membership, nested groups included. A failed lookup is missing evidence.
 function isAdmin(name) {
   return once(`admin:${name}`, () => {
@@ -258,7 +272,8 @@ function osBaseline() {
 const RULES = [];
 function rule(id, title, severity, category, why, fix, docs, fn) { RULES.push({id, title, severity, category, why, fix, docs, fn}); }
 const item = (name, detail) => ({name, detail});
-const res = (items, checked, unit, note, severity) => ({items, checked, unit, note: note || '', severity: severity || ''});
+const res = (items, checked, unit, note, severity, missing) =>
+  ({items, checked, unit, note: note || '', severity: severity || '', missing: missing || []});
 
 // FileVault
 rule('FV-01', 'FileVault is off', 'Critical', 'FileVault',
@@ -276,7 +291,7 @@ rule('FV-03', 'FileVault is on but no personal recovery key exists', 'Critical',
   'Scope a FileVault recovery-key escrow profile plus a key-reissue tool (Escrow Buddy) to this Mac.',
   [DOC.ESCROW, DOC.FV], () => {
     if (!isRoot()) throw new MissingData('fdesetup haspersonalrecoverykey needs the admin password');
-    if (!fvOn()) throw new MissingData('FileVault is off (FV-01)');
+    if (!fvOn()) throw new NotApplicable('FileVault is off (FV-01)');
     const r = sh('/usr/bin/fdesetup haspersonalrecoverykey'), has = r.out.trim();
     // The exit status that goes with "false" is undocumented, so the answer decides; any other output is no evidence.
     if (has !== 'true' && has !== 'false') throw new MissingData(`fdesetup haspersonalrecoverykey gave no answer (exit ${r.rc})`);
@@ -286,7 +301,7 @@ rule('FV-04', 'No recovery-key escrow profile is installed', 'Medium', 'FileVaul
   'Without an escrow profile, a recovery key that changes later reaches Jamf only if a Jamf policy issues a new one.',
   'Scope a profile with the FileVault recovery key escrow payload to all Macs. On macOS 26 and later, installing it while a bootstrap token is present rotates the key and escrows the new one.',
   [DOC.FV_PREP, DOC.ESCROW], () => {
-    if (!fvOn()) throw new MissingData('FileVault is off (FV-01)');
+    if (!fvOn()) throw new NotApplicable('FileVault is off (FV-01)');
     const ok = hasPayload('com.apple.security.FDERecoveryKeyEscrow');
     const prk = sh('/bin/test -f /var/db/FileVaultPRK.dat').rc === 0;
     return res(ok ? [] : [item('FDERecoveryKeyEscrow payload', 'not installed')], 1, 'startup disk',
@@ -307,9 +322,9 @@ rule('MDM-03', 'No bootstrap token is escrowed', 'Medium', 'MDM health',
   'Without an escrowed bootstrap token, new mobile and Platform SSO accounts get a secure token only when an administrator authenticates, and on Apple silicon MDM cannot authorize software updates, Erase All Content and Settings or kernel-extension enablement without a user authenticating.',
   'Have a secure-token user log in after MDM enrollment (or run `profiles install -type bootstraptoken`).',
   [DOC.BOOTSTRAP], () => {
-    if (!enrolled().enrolled) throw new MissingData('not enrolled in MDM (MDM-02)');
+    if (!enrolled().enrolled) throw new NotApplicable('not enrolled in MDM (MDM-02)');
     if (!isRoot()) throw new MissingData('profiles status -type bootstraptoken needs the admin password');
-    const out = sh('/usr/bin/profiles status -type bootstraptoken', {limit: LIMIT}).out;
+    const out = must('/usr/bin/profiles status -type bootstraptoken', {limit: LIMIT});
     const escrowed = /escrowed to server:\s*YES/i.test(out);
     return res(escrowed ? [] : [item('Bootstrap token', out.replace(/profiles:\s*/g, '').replace(/\s*\n\s*/g, '; '))], 1, 'MDM enrollment');
   });
@@ -320,7 +335,7 @@ rule('ACC-01', 'The signed-in user is a local administrator', 'High', 'Accounts'
   'Create Standard users in PreStage, and give a managed (LAPS) admin account to IT instead.',
   [DOC.PRESTAGE], () => {
     const u = consoleUser();
-    if (!u) throw new MissingData('no user is signed in at the console');
+    if (!u) throw new NotApplicable('no user is signed in at the console');
     return res(mustBeAdmin(u) ? [item(u, 'member of the admin group')] : [], 1, 'signed-in user');
   });
 rule('ACC-02', 'Local account records are broken (no UID)', 'High', 'Accounts',
@@ -353,24 +368,25 @@ rule('ACC-06', 'The Guest account is on', 'Medium', 'Accounts',
   'Remove the guest keys from the profile, and keep guest off in one login-window profile only.',
   [], () => {
     const items = [];
-    if (sh('/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow GuestEnabled').out.trim() === '1')
+    if (readDefault('/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow GuestEnabled') === '1')
       items.push(item('Login window', 'GuestEnabled=1'));
-    let note = '';
+    let note = '', missing = [];
     try {
       for (const p of computerProfiles()) for (const c of p.payloads)
         if (c.EnableGuestAccount === true || c.DisableGuestAccount === false) items.push(item(label(p), `${c.PayloadType} enables Guest`));
     } catch (e) {
       if (!items.length) throw e;   // a profile could still enable Guest
       note = 'Profiles not checked: ' + e.message + '.';
+      missing.push(e.message);
     }
-    return res(items, 1, 'login window', note);
+    return res(items, 1, 'login window', note, '', missing);
   });
 rule('ACC-07', 'Automatic login is on', 'High', 'Accounts',
   'Anyone who restarts this Mac reaches the chosen account\'s desktop without a password. macOS turns automatic login off when FileVault is on, so automatic login also means the disk is not encrypted.',
   'Turn on FileVault (FV-01), which turns automatic login off, and turn automatic login off in Users & Groups settings.',
   [DOC.AUTOLOGIN], () => {
-    const r = sh('/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser');
-    return res(r.rc === 0 && r.out ? [item(r.out.trim(), `automatic login; FileVault ${fvOn() ? 'on' : 'off'}`)] : [], 1, 'login window');
+    const user = readDefault('/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser');
+    return res(user ? [item(user, `automatic login; FileVault ${fvOn() ? 'on' : 'off'}`)] : [], 1, 'login window');
   });
 rule('ACC-08', 'A Platform SSO profile makes users administrators', 'High', 'Accounts',
   'With UserAuthorizationMode set to Admin, macOS adds each user who authenticates with Platform SSO to the local administrators group. NewUserAuthorizationMode Admin does the same for accounts created at sign-in.',
@@ -389,7 +405,7 @@ rule('DIR-01', 'This Mac is bound to Active Directory', 'Low', 'Accounts',
   'Bound Macs keep a computer-account password and cache mobile-account passwords. Away from the organisation\'s network, mobile accounts can still sign in, but password changes made off the network fall out of sync with AD and the login keychain, and accounts that are not mobile accounts cannot sign in.',
   'Plan the unbind and move to Platform SSO or local accounts.',
   [DOC.AD_MOBILITY], () => {
-    const out = sh('/usr/sbin/dsconfigad -show').out;
+    const out = adStatus();
     const domain = (out.match(/Active Directory Domain\s*=\s*(.+)/) || [])[1];
     return res(domain ? [item('Active Directory', `bound to ${domain.trim()}`)] : [], 1, 'directory binding');
   });
@@ -397,8 +413,8 @@ rule('DIR-02', 'The AD binding makes directory groups local administrators', 'Me
   'Every member of these AD groups becomes an admin on each bound Mac, so one compromised AD account controls them all.',
   'Remove broad groups (for example Domain Admins) from the binding\'s admin groups.',
   [], () => {
-    const out = sh('/usr/sbin/dsconfigad -show').out;
-    if (!/Active Directory Domain/.test(out)) throw new MissingData('not bound to Active Directory');
+    const out = adStatus();
+    if (!/Active Directory Domain/.test(out)) throw new NotApplicable('not bound to Active Directory');
     const groups = ((out.match(/Allowed admin groups\s*=\s*(.+)/) || [])[1] || '').trim();
     return res(groups && groups !== 'not set' ? [item('Allowed admin groups', groups)] : [], 1, 'directory binding');
   });
@@ -538,7 +554,7 @@ rule('OS-02', 'This Mac is behind the latest security release for its macOS vers
   'Enforce updates with a deadline (Managed Software Updates or DDM) and track the stragglers.',
   [DOC.APPLE_SEC, DOC.SOFA], () => {
     const {majors, supported} = osBaseline(), v = verTuple(osVersion());
-    if (!supported.includes(v[0])) throw new MissingData(`macOS ${osVersion()} is no longer supported (OS-03)`);
+    if (!supported.includes(v[0])) throw new NotApplicable(`macOS ${osVersion()} is no longer supported (OS-03)`);
     const latest = majors[v[0]].latest;
     return res(verCmp(v, verTuple(latest.ProductVersion)) < 0
       ? [item(`macOS ${osVersion()}`, `older than ${latest.ProductVersion} (${String(latest.ReleaseDate).slice(0, 10)})`)] : [],
@@ -557,10 +573,17 @@ rule('SEC-01', 'SIP or Gatekeeper is off', 'High', 'Platform security',
   'System Integrity Protection and Gatekeeper block tampering with system files and unsigned apps.',
   'Re-enable from Recovery (csrutil enable) and with spctl; investigate why they were turned off.',
   [], () => {
-    const sip = sh('/usr/bin/csrutil status').out, gk = sh('/usr/sbin/spctl --status').out, items = [];
-    if (!/status: enabled/.test(sip)) items.push(item('System Integrity Protection', sip.replace(/\s+/g, ' ')));
-    if (!/assessments enabled/.test(gk)) items.push(item('Gatekeeper', gk));
-    return res(items, 2, 'protections');
+    const commands = [['System Integrity Protection', '/usr/bin/csrutil status', /status: enabled/],
+                      ['Gatekeeper', '/usr/sbin/spctl --status', /assessments enabled/]];
+    const items = [], missing = [];
+    let checked = 0;
+    for (const [name, command, enabled] of commands) {
+      const r = sh(command);
+      if (r.rc !== 0) { missing.push(failure(command, r)); continue; }
+      checked += 1;
+      if (!enabled.test(r.out)) items.push(item(name, r.out.replace(/\s+/g, ' ')));
+    }
+    return res(items, checked, 'protections', '', '', missing);
   });
 rule('SEC-02', 'Activation Lock is on', 'Medium', 'Platform security',
   'An Activation-Locked Mac needs the user\'s Apple Account or an escrowed bypass code to reuse.',
@@ -576,13 +599,18 @@ rule('SEC-04', 'No profile requires a password after the screen saver starts', '
   [DOC.SCREENSAVER], () => {
     const asks = payloadsOf('com.apple.screensaver').filter(([, c]) => c.askForPassword === true);
     // A grace period over 5 minutes (2147483647 turns the requirement off) is not enforcement.
-    const ok = asks.filter(([, c]) => !(Number(c.askForPasswordDelay) > 300));
+    const validDelay = c => typeof c.askForPasswordDelay === 'number' && Number.isFinite(c.askForPasswordDelay)
+      && c.askForPasswordDelay >= 0 && c.askForPasswordDelay <= 300;
+    const ok = asks.filter(([, c]) => validDelay(c));
+    const invalidDelay = asks.some(([, c]) => typeof c.askForPasswordDelay !== 'number'
+      || !Number.isFinite(c.askForPasswordDelay) || c.askForPasswordDelay < 0);
+    const delayList = asks.map(([p, c]) => `${p.name}: ${c.askForPasswordDelay === undefined ? 'missing' : c.askForPasswordDelay}`).join(', ');
     const me = consoleUser();
     // sysadminctl reports the calling user's setting, so as root ask on behalf of the signed-in user.
     const cmd = isRoot() ? `/usr/bin/sudo -n -u ${shq(me)} /usr/sbin/sysadminctl -screenLock status` : '/usr/sbin/sysadminctl -screenLock status';
     const now = me ? sh(cmd).out.replace(/^.*\]\s*/s, '') : '';
     return res(ok.length ? [] : [item('Screen saver', asks.length
-      ? `askForPassword is set, but askForPasswordDelay is over 300 seconds (${asks.map(([p, c]) => `${p.name}: ${c.askForPasswordDelay}`).join(', ')})`
+      ? `askForPassword is set, but askForPasswordDelay is ${invalidDelay ? 'missing or invalid' : 'over 300 seconds'} (${delayList})`
       : 'no installed profile sets askForPassword')], 1, 'Mac',
       (ok.length ? `Enforced by: ${ok.map(([p]) => p.name).join(', ')}. ` : '') + (now ? `User setting: ${now}.` : ''));
   });
@@ -657,12 +685,20 @@ function runRules() {
     const rec = {id: r.id, title: r.title, category: r.category, severity: r.severity, why: r.why, fix: r.fix, docs: r.docs};
     try {
       const x = r.fn();
-      Object.assign(rec, {status: x.items.length ? 'FAIL' : 'PASS', items: x.items, checked: x.checked, unit: x.unit,
-                          note: x.note, severity: x.severity || r.severity});
-      if (!x.items.length && !x.checked) Object.assign(rec, {status: 'SKIP', note: [`Nothing to check (0 ${x.unit})`, x.note].filter(Boolean).join('; ')});
+      const incomplete = x.missing.length > 0;
+      Object.assign(rec, {status: x.items.length ? 'FAIL' : incomplete ? 'SKIP' : 'PASS', items: x.items,
+                          checked: x.checked, unit: x.unit,
+                          note: [x.note, incomplete ? `Missing evidence: ${x.missing.join('; ')}` : ''].filter(Boolean).join('; '),
+                          severity: x.severity || r.severity, incomplete});
+      if (!x.items.length && !x.checked && !incomplete)
+        Object.assign(rec, {status: 'SKIP', note: [`Nothing to check (0 ${x.unit})`, x.note].filter(Boolean).join('; ')});
     } catch (e) {
-      if (e instanceof MissingData) Object.assign(rec, {status: 'SKIP', items: [], checked: 0, unit: '', note: `Not checked: ${e.message}`});
-      else Object.assign(rec, {status: 'ERROR', items: [], checked: 0, unit: '', note: `${e.name || 'Error'} (details withheld from the report)`});
+      if (e instanceof MissingData) Object.assign(rec, {status: 'SKIP', items: [], checked: 0, unit: '',
+        note: `Not checked: ${e.message}`, incomplete: true});
+      else if (e instanceof NotApplicable) Object.assign(rec, {status: 'SKIP', items: [], checked: 0, unit: '',
+        note: `Not applicable: ${e.message}`, incomplete: false});
+      else Object.assign(rec, {status: 'ERROR', items: [], checked: 0, unit: '',
+        note: `${e.name || 'Error'} (details withheld from the report)`, incomplete: true});
     }
     out.push(rec);
   }
@@ -749,6 +785,8 @@ function run(argv) {
   const reasons = [];
   const crashed = results.filter(r => r.status === 'ERROR').map(r => r.id);
   if (crashed.length) reasons.push(`${crashed.length} check${crashed.length === 1 ? '' : 's'} could not run (${crashed.join(', ')})`);
+  const missing = results.filter(r => r.incomplete && r.status !== 'ERROR').map(r => r.id);
+  if (missing.length) reasons.push(`${missing.length} check${missing.length === 1 ? '' : 's'} lacked reliable evidence (${missing.join(', ')})`);
   if (!isRoot()) reasons.push('run without the admin password, so checks that need it were skipped');
   let assets = {};
   try { assets = JSON.parse(readFile(opt.assets) || '{}'); } catch (e) { /* plain report without the shared stylesheet */ }

@@ -3,7 +3,7 @@
 <p align="center">
   <img alt="Platform: macOS" src="https://img.shields.io/badge/platform-macOS-F4BD47?style=flat-square&labelColor=000000&logo=apple&logoColor=white">
   <img alt="Language: JavaScript for Automation" src="https://img.shields.io/badge/language-JavaScript%20for%20Automation-C00027?style=flat-square&labelColor=000000">
-  <img alt="Version 2.1.0" src="https://img.shields.io/badge/version-2.1.0-F4BD47?style=flat-square&labelColor=000000">
+  <img alt="Version 2.1.1" src="https://img.shields.io/badge/version-2.1.1-F4BD47?style=flat-square&labelColor=000000">
   <img alt="Audit: read-only" src="https://img.shields.io/badge/audit-read--only-C00027?style=flat-square&labelColor=000000">
 </p>
 
@@ -86,9 +86,9 @@ The audit runs 30 checks in seven areas. Rule IDs stay the same across releases.
 
 NET-05 is Low when every open network in the profiles has AutoJoin off. NET-06 is Medium when the network is also open.
 
-Each check ends as PASS, FAIL, SKIP or ERROR. The audit skips a check when it cannot get reliable evidence. A skipped check never counts as a pass.
+Each check ends as PASS, FAIL, SKIP or ERROR. SKIP means either that the check does not apply or that reliable evidence was unavailable. Missing evidence marks the whole report incomplete; a skipped check never counts as a pass.
 
-[RULE_SOURCES.md](RULE_SOURCES.md) quotes the Apple, Jamf and Microsoft sources behind the rule text.
+[RULE_SOURCES.md](RULE_SOURCES.md) quotes the Apple, Jamf and Microsoft sources reviewed for selected rule text.
 
 ## How a run works
 
@@ -96,7 +96,7 @@ The app opens a Terminal window and runs the audit there. Enter your admin passw
 
 Some checks need root. These checks read computer-level profiles, the bootstrap token and the FileVault recovery key. Without the admin password, the audit skips these checks and marks the report incomplete.
 
-The launcher verifies the code signature of the app before it asks for the password. If the signature does not verify, the audit runs without admin rights.
+The launcher strictly verifies the app's code signature before it asks for the password. A Developer ID build must also pass Gatekeeper assessment. An ad-hoc local build verifies bundle integrity but does not authenticate who built it.
 
 ### Where the report goes
 
@@ -117,7 +117,9 @@ Under sudo, the audit writes into a temporary folder that only root can read. Yo
 
 ## Signing and quarantine
 
-The app has an ad-hoc signature. It has no Developer ID, and Apple has not notarized it. A copy that you build yourself has no quarantine flag and opens normally.
+The build script uses an ad-hoc signature by default. That detects changed bundle resources but does not authenticate the publisher. A copy that you build yourself has no quarantine flag and opens normally.
+
+Set `CODESIGN_IDENTITY` to a Developer ID Application identity to create a timestamped hardened-runtime build. This repository does not contain signing credentials, and the resulting app still needs notarization and stapling before public distribution.
 
 macOS quarantines a copy that you download from elsewhere, so Gatekeeper blocks it. To allow it once, open System Settings > Privacy & Security. Then click Open Anyway. A build from source avoids this step.
 
@@ -147,9 +149,13 @@ Run the command with `sudo` for full coverage. The command prints one line for e
 
 ```sh
 ./build_jamf_security_audit_app.sh [DEST_DIR]
+
+# Optional authenticated signing (requires an installed Developer ID identity)
+CODESIGN_IDENTITY='Developer ID Application: Example (TEAMID)' \
+  ./build_jamf_security_audit_app.sh [DEST_DIR]
 ```
 
-The script compiles the AppleScript launcher. It copies the audit script, the launcher and `report_assets.json` into the bundle. Then it signs the bundle with an ad-hoc signature.
+The script compiles the AppleScript launcher and copies the audit script, launcher and `report_assets.json` into the bundle. It signs ad-hoc unless `CODESIGN_IDENTITY` is set.
 
 The default destination is `~/Desktop`. The script renames an existing app at the destination with a `.bak` timestamp. It does not overwrite the existing app.
 
