@@ -3,3 +3,7 @@ Archive/
 .DS_Store
 *.app/
 __pycache__/
+.ua/intermediate/
+.ua/tmp/
+.ua/.trash-*/
+.ua/diff-overlay.json

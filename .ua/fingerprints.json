@@ -1,0 +1,580 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "ae5c35d07c284e3cb9d70fdbc6e5bc702fc8d9a9",
+  "generatedAt": "2026-11-09T02:22:25.710Z",
+  "files": {
+    ".ua/config.json": {
+      "filePath": ".ua/config.json",
+      "contentHash": "08d37f20ea0af2233ae24f094723759f952381ecb6dd7f2aaa05ef96e95eae6b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "CHANGELOG.md": {
+      "filePath": "CHANGELOG.md",
+      "contentHash": "a949dc0adee063609ea7c15171f53127eab30cbdf985ebac17d74476fe3be90c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": false
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "f59bca73a1561c7d6596a42c9ad6d8925f5727d96fb37718c8056ef73e0d8c88",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 198,
+      "hasStructuralAnalysis": false
+    },
+    "RULE_SOURCES.md": {
+      "filePath": "RULE_SOURCES.md",
+      "contentHash": "1585e6e4eb34df865bc30cb9b1f47ee565f39b3a37a97cd71786002baade08f3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 380,
+      "hasStructuralAnalysis": false
+    },
+    "build_jamf_security_audit_app.sh": {
+      "filePath": "build_jamf_security_audit_app.sh",
+      "contentHash": "26334cd14905f6888e0276eab82a6eecdf7ce24f7854df35233b8fdd86f5f62c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 55,
+      "hasStructuralAnalysis": false
+    },
+    "jamf_host_audit.js": {
+      "filePath": "jamf_host_audit.js",
+      "contentHash": "eb39e8f612c3bb142f8be7d63d73468995ba22cc4456a98e1f2a0c8467726c4c",
+      "functions": [
+        {
+          "name": "shq",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "sh",
+          "params": [
+            "cmd"
+          ],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "failure",
+          "params": [
+            "cmd",
+            "r"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "must",
+          "params": [
+            "cmd",
+            "opts"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "readDefault",
+          "params": [
+            "cmd"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "plist",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "readFile",
+          "params": [
+            "path"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "writePrivate",
+          "params": [
+            "path",
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "verTuple",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "verCmp",
+          "params": [
+            "a",
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "safeValue",
+          "params": [
+            "key",
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "once",
+          "params": [
+            "name",
+            "fn"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "isRoot",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "consoleUser",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "fvStatus",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fvOn",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "enrollment",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "enrolled",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "hardware",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "osVersion",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "osNote",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "users",
+          "params": [],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "adStatus",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "isAdmin",
+          "params": [
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "mustBeAdmin",
+          "params": [
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "profiles",
+          "params": [],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "computerProfiles",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "payloadsOf",
+          "params": [
+            "type"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "hasPayload",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "label",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "loadSofa",
+          "params": [
+            "offline"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "osBaseline",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "rule",
+          "params": [
+            "id",
+            "title",
+            "severity",
+            "category",
+            "why",
+            "fix",
+            "docs",
+            "fn"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "item",
+          "params": [
+            "name",
+            "detail"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "res",
+          "params": [
+            "items",
+            "checked",
+            "unit",
+            "note",
+            "severity",
+            "missing"
+          ],
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "launchdLabel",
+          "params": [
+            "path"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "launchdLoaded",
+          "params": [
+            "label"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "wifiPayloads",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "pppc",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "runRules",
+          "params": [],
+          "exported": false,
+          "lineCount": 26
+        },
+        {
+          "name": "esc",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "facts",
+          "params": [],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "renderHtml",
+          "params": [
+            "results",
+            "assets",
+            "reasons"
+          ],
+          "exported": false,
+          "lineCount": 48
+        },
+        {
+          "name": "run",
+          "params": [
+            "argv"
+          ],
+          "exported": false,
+          "lineCount": 34
+        }
+      ],
+      "classes": [
+        {
+          "name": "MissingData",
+          "methods": [],
+          "properties": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "NotApplicable",
+          "methods": [],
+          "properties": [],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "imports": [],
+      "exports": [],
+      "totalLines": 804,
+      "hasStructuralAnalysis": true
+    },
+    "jamf_security_audit.applescript": {
+      "filePath": "jamf_security_audit.applescript",
+      "contentHash": "32c6353a739d13a44b69376e56ad1daa7591f2d70c9b1b3fa40a362fcf6d9ab5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "report_assets.json": {
+      "filePath": "report_assets.json",
+      "contentHash": "4ff84743333272f5b723d990486ad082dc791d1862c8b0475b17a4a3ba24f6d4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    "run-jamfsecurityaudit.command": {
+      "filePath": "run-jamfsecurityaudit.command",
+      "contentHash": "92653ea884feb5843198b8ed59283c444f6327ea10aea1625d9916d45d1cb7e7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 73,
+      "hasStructuralAnalysis": false
+    },
+    "test_jamf_host_audit.py": {
+      "filePath": "test_jamf_host_audit.py",
+      "contentHash": "f8fd028c59e4ba182fecddde63ebb6cac11f3416252d0dbf22f2eb60fb9c884c",
+      "functions": [
+        {
+          "name": "ok",
+          "params": [
+            "out",
+            "rc"
+          ],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "profile",
+          "params": [
+            "name",
+            "*payloads"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "profiles_xml",
+          "params": [
+            "computer"
+          ],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "bad",
+          "params": [],
+          "exported": true,
+          "lineCount": 42
+        },
+        {
+          "name": "good",
+          "params": [],
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "classes": [
+        {
+          "name": "HostAuditTests",
+          "methods": [
+            "setUp",
+            "tearDown",
+            "run_audit",
+            "audit",
+            "test_known_bad_fires",
+            "test_known_good_passes",
+            "test_filevault_off_and_old_macos",
+            "test_without_admin_password_root_checks_skip_and_audit_is_incomplete",
+            "test_no_sofa_feed_skips_os_checks",
+            "test_unknown_commands_only_skip_and_mark_audit_incomplete",
+            "test_failed_collectors_skip_and_mark_audit_incomplete",
+            "test_partial_security_evidence_keeps_finding_and_marks_incomplete",
+            "test_report_is_private_and_keeps_secrets_out",
+            "test_failed_membership_lookup_skips_instead_of_passing",
+            "test_failed_dscl_skips_account_checks",
+            "test_unlistable_folders_skip_remote_control_check",
+            "test_failed_profiles_listing_skips_profile_checks",
+            "test_unparseable_profiles_output_skips",
+            "test_empty_certificate_anchor_list_is_not_a_pin",
+            "test_macos_newer_than_sofa_skips",
+            "test_background_security_improvement_suffix_counts",
+            "test_long_screen_saver_grace_period_is_not_enforcement",
+            "test_missing_screen_saver_grace_period_is_not_enforcement",
+            "test_unexpected_profile_string_is_not_copied_to_reports",
+            "test_fixture_refused_without_env_var",
+            "test_symlinked_report_destination_is_refused"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 237
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "plistlib",
+          "specifiers": [
+            "plistlib"
+          ]
+        },
+        {
+          "source": "subprocess",
+          "specifiers": [
+            "subprocess"
+          ]
+        },
+        {
+          "source": "tempfile",
+          "specifiers": [
+            "tempfile"
+          ]
+        },
+        {
+          "source": "unittest",
+          "specifiers": [
+            "unittest"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        }
+      ],
+      "exports": [
+        "ok",
+        "profile",
+        "profiles_xml",
+        "bad",
+        "good",
+        "HostAuditTests"
+      ],
+      "totalLines": 394,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

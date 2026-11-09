@@ -125,6 +125,10 @@ macOS quarantines a copy that you download from elsewhere, so Gatekeeper blocks 
 
 ## Reference
 
+### Codebase graph
+
+The [Understand Anything graph](.ua/knowledge-graph.json) maps the launcher, audit rules, report output, build script, and tests. Open this checkout with the Understand Anything `/understand-dashboard` skill to explore the graph and guided tour. The graph records the source commit it analyzed in `project.gitCommitHash`.
+
 <details>
 <summary><b>Command-line options</b></summary>
 
