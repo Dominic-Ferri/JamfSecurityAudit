@@ -127,7 +127,7 @@ macOS quarantines a copy that you download from elsewhere, so Gatekeeper blocks 
 
 ### Codebase graph
 
-The [Understand Anything graph](.ua/knowledge-graph.json) maps the launcher, audit rules, report output, build script, and tests. Open this checkout with the Understand Anything `/understand-dashboard` skill to explore the graph and guided tour. The graph records the source commit it analyzed in `project.gitCommitHash`.
+Download **codebase-graph.html** from the latest release assets and open it in a browser. The standalone viewer includes clickable nodes, search, relationship details, and a seven-step guided tour; it works offline. The [HTML source](docs/codebase-graph.html) and [Understand Anything graph data](.ua/knowledge-graph.json) are also in this repository. GitHub displays HTML source rather than running it, so download the file to view the interactive graph.
 
 <details>
 <summary><b>Command-line options</b></summary>

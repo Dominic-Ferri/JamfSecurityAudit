@@ -1,5 +1,9 @@
 # Changelog
 
+## Documentation update (2026-11-09)
+
+- Added a standalone offline HTML viewer for the Understand Anything graph, with node selection, search, relationships, and guided tour. Published the HTML as a v2.1.1 release asset on both repositories.
+
 ## 2.1.1 (2026-11-08)
 
 This release makes missing evidence explicit and closes the remaining report-redaction and screen-lock validation gaps.
